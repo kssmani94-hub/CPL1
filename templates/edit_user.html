@@ -57,7 +57,9 @@
     </div>
 
 </div>
+{% endblock %}
 
+{% block scripts %}
 {# Add JavaScript to show/hide Team dropdown based on Role selection #}
 <script>
     const roleSelect = document.getElementById('role');
@@ -70,12 +72,9 @@
             teamGroup.style.display = 'none';
         }
     }
-
     // Run on page load
     toggleTeamSelect();
-
     // Run when role changes
     roleSelect.addEventListener('change', toggleTeamSelect);
 </script>
-
 {% endblock %}
