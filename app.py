@@ -359,6 +359,84 @@ def create_user():
         flash(f'Login created for {full_name}!', 'success'); return redirect(url_for('dashboard'))
     return render_template('create_user.html', active_page='create_user', teams=teams)
 
+# --- NEW ROUTE TO EDIT USER ---
+@app.route('/edit_user/<int:user_id>', methods=['GET', 'POST'])
+@login_required
+@role_required(['Super Admin']) # Only Super Admins can edit
+def edit_user(user_id):
+    user_to_edit = User.query.get_or_404(user_id) # Find the user or show 404 error
+    teams = Team.query.all() # Get teams for the dropdown
+
+    if request.method == 'POST':
+        # Get data from the submitted form
+        new_full_name = request.form.get('full_name')
+        new_username = request.form.get('username')
+        new_role = request.form.get('role')
+        new_team_id = request.form.get('team_id')
+        new_password = request.form.get('password') # Optional new password
+
+        # --- Validation ---
+        # Check if username changed and if the new one is taken by *another* user
+        if new_username != user_to_edit.username and User.query.filter(User.username == new_username, User.id != user_id).first():
+            flash(f'Username "{new_username}" is already taken.', 'error')
+            # Reload the edit page with current data
+            return render_template('edit_user.html', active_page='dashboard', user=user_to_edit, teams=teams)
+
+        # --- Update User Data ---
+        user_to_edit.full_name = new_full_name
+        user_to_edit.username = new_username
+        user_to_edit.role = new_role
+        # Only set team if the role is Captain
+        user_to_edit.team_id = int(new_team_id) if new_team_id and new_role == 'Captain' else None
+
+        # Only update password if a new one was entered
+        if new_password:
+            user_to_edit.set_password(new_password)
+            flash('Password updated successfully.', 'info') # Optional feedback
+
+        try:
+            db.session.commit() # Save the changes to the database
+            flash(f'User "{user_to_edit.full_name}" updated successfully!', 'success')
+            return redirect(url_for('dashboard')) # Go back to the dashboard
+        except Exception as e:
+            db.session.rollback() # Undo changes if error
+            flash(f'Error updating user: {e}', 'error')
+
+    # If GET request, show the pre-filled form
+    return render_template('edit_user.html',
+                           active_page='dashboard', # Keep dashboard highlighted in nav
+                           user=user_to_edit, # Pass the user object to the template
+                           teams=teams)         # Pass the teams list
+
+
+# --- NEW ROUTE TO DELETE USER ---
+@app.route('/delete_user/<int:user_id>', methods=['POST'])
+@login_required
+@role_required(['Super Admin']) # Only Super Admins can delete
+def delete_user(user_id):
+    # Prevent super admin from deleting themselves
+    if user_id == current_user.id:
+        flash('You cannot delete your own account.', 'error')
+        return redirect(url_for('dashboard'))
+
+    user_to_delete = User.query.get_or_404(user_id) # Find user or show 404
+
+    try:
+        # Check if the user is a captain and might be linked to a team
+        # If a captain is deleted, we should probably set their team_id link to None in the User table
+        # If the user's team relationship is set up (like `team = relationship(...)`),
+        # SQLAlchemy might handle this, but explicit is safer.
+        # We'll just delete for now; add team relationship handling if it causes issues.
+        
+        db.session.delete(user_to_delete)
+        db.session.commit()
+        flash(f'User "{user_to_delete.username}" deleted successfully.', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error deleting user: {e}', 'error')
+
+    return redirect(url_for('dashboard')) # Redirect back to the dashboard
+    
 # --- EXPORT ROUTE ---
 @app.route('/export_team_excel/<int:team_id>')
 @login_required
