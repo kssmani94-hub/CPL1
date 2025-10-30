@@ -9,7 +9,7 @@
 
     {# Check authentication AND correct role #}
     {% if current_user.is_authenticated and current_user.role in ['Admin', 'Super Admin'] %}
-    <div class="auction-admin-panel layout-e4f0bf-admin"> {# Added class #}
+    <div class="auction-admin-panel layout-e4f0bf-admin"> {# Admin controls box #}
         <h3>Admin Controls {% if auction_started or round_complete %}(Round {{ auction_round }}){% endif %}</h3>
         <div class="admin-buttons-group">
             {% if auction_paused %}
@@ -25,7 +25,6 @@
                  <a href="{{ url_for('next_player') }}" class="admin-action-btn start-btn">
                     {% if auction_complete %} Start New Auction {% else %} Start Auction {% endif %} <i class="fas fa-gavel"></i>
                 </a>
-                {# Show Reset button only before start or after completion #}
                 <a href="{{ url_for('restart_auction') }}" class="admin-action-btn reset-btn">Reset Auction Data <i class="fas fa-undo"></i></a>
             {% endif %}
             {# Show Reset button also when paused or round complete #}
@@ -37,7 +36,7 @@
     {% endif %}
     {# --- End of Admin Panel --- #}
 
-{# --- PLAYER COUNT SUMMARY --- #}
+    {# --- PLAYER COUNT SUMMARY (SEPARATE CARD) --- #}
     <div class="auction-player-summary">
         <div class="summary-box">
             <span class="summary-label">Total Pool</span>
@@ -47,18 +46,19 @@
             <span class="summary-label">Sold</span>
             <span class="summary-value">{{ sold_players_count }}</span>
         </div>
-         <div class="summary-box available"> {# Changed class to 'available' #}
+         <div class="summary-box available">
             <span class="summary-label">Available Now</span>
             <span class="summary-value">{{ currently_unsold_count }}</span>
         </div>
-        <div class="summary-box unsold"> {# Changed class to 'unsold' #}
-            <span class="summary-label">Marked Unsold</span> {# Changed Label #}
-            <span class="summary-value">{{ marked_unsold_count }}</span> {# Use new count #}
+        <div class="summary-box unsold">
+            <span class="summary-label">Marked Unsold</span>
+            <span class="summary-value">{{ marked_unsold_count }}</span>
         </div>
     </div>
     {# --- END PLAYER COUNT SUMMARY --- #}
-	
-    {# Show player card only if auction is active AND user is Admin/SuperAdmin (or if public view is allowed later) #}
+
+
+    {# Show player card only if auction is active AND not paused #}
     {% if auction_started and player and not auction_paused %}
         <div class="auction-player-display layout-e4f0bf-display"> {# Added class #}
             <div class="auction-player-photo layout-e4f0bf-photo">
@@ -91,15 +91,15 @@
                     <div class="stats-table-wrapper">
                         <h3>VPL 2024 Records</h3>
                          <table class="mini-stats-table">
-                            <thead><tr><th>Team</th><th>INN</th><th>Runs</th><th>AVG</th><th>SR</th><th>HS</th></tr></thead>
-                            <tbody><tr><td>{{ player.cpl_2024_team if player.cpl_2024_team else '-' }}</td><td>{{ player.cpl_2024_innings if player.cpl_2024_innings is not none else '-' }}</td><td>{{ player.cpl_2024_runs if player.cpl_2024_runs is not none else '-' }}</td><td>{{ player.cpl_2024_average if player.cpl_2024_average is not none else '-' }}</td><td>{{ player.cpl_2024_sr if player.cpl_2024_sr is not none else '-' }}</td><td>{{ player.cpl_2024_hs if player.cpl_2024_hs is not none else '-' }}</td></tr></tbody>
+                            <thead><tr><th>Team</th><th>INN</th><th>Runs</th><th>WKT</th><th>SR</th><th>HS</th></tr></thead>
+                            <tbody><tr><td>{{ player.cpl_2024_team if player.cpl_2024_team else '-' }}</td><td>{{ player.cpl_2024_innings if player.cpl_2024_innings is not none else '-' }}</td><td>{{ player.cpl_2024_runs if player.cpl_2024_runs is not none else '-' }}</td><td>{{ player.cpl_2024_wickets if player.cpl_2024_wickets is not none else '-' }}</td><td>{{ player.cpl_2024_sr if player.cpl_2024_sr is not none else '-' }}</td><td>{{ player.cpl_2024_hs if player.cpl_2024_hs is not none else '-' }}</td></tr></tbody>
                          </table>
                     </div>
                     <div class="stats-table-wrapper">
                         <h3>Overall Records</h3>
                          <table class="mini-stats-table">
-                            <thead><tr><th>MAT</th><th>Runs</th><th>WKT</th><th>BAT AVG</th><th>BOWL AVG</th></tr></thead>
-                            <tbody><tr><td>{{ player.overall_matches if player.overall_matches is not none else '-' }}</td><td>{{ player.overall_runs if player.overall_runs is not none else '-' }}</td><td>{{ player.overall_wickets if player.overall_wickets is not none else '-' }}</td><td>{{ player.overall_bat_avg if player.overall_bat_avg is not none else '-' }}</td><td>{{ player.overall_bowl_avg if player.overall_bowl_avg is not none else '-' }}</td></tr></tbody>
+                            <thead><tr><th>MAT</th><th>Runs</th><th>WKT</th><th>SR</th><th>HS</th></tr></thead>
+                            <tbody><tr><td>{{ player.overall_matches if player.overall_matches is not none else '-' }}</td><td>{{ player.overall_runs if player.overall_runs is not none else '-' }}</td><td>{{ player.overall_wickets if player.overall_wickets is not none else '-' }}</td><td>{{ player.overall_sr if player.overall_sr is not none else '-' }}</td><td>{{ player.overall_hs if player.overall_hs is not none else '-' }}</td></tr></tbody>
                          </table>
                     </div>
                 </div>
