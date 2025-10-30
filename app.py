@@ -177,6 +177,7 @@ def teams():
 # Find the auctions() function
 
 # --- AUCTION ROUTES (PUBLIC, content conditional) ---
+# --- AUCTION ROUTES (PUBLIC, content conditional) ---
 @app.route('/auctions')
 def auctions():
     all_teams = Team.query.all()
@@ -188,7 +189,7 @@ def auctions():
     current_player = None
     next_round_players_count = 0
 
-    # --- CALCULATE COUNTS ---
+    # --- CALCULATE COUNTS (CORRECTED) ---
     total_auction_players = Player.query.filter_by(is_retained=False).count()
     sold_players_count = Player.query.filter_by(is_retained=False, status='Sold').count()
     # Count players available NOW (status 'Unsold')
@@ -198,8 +199,7 @@ def auctions():
         Player.is_retained==False,
         (Player.status.like('Round % Unsold') | (Player.status == 'Unsold Final'))
     ).count()
-
-    # Calculate total remaining (available now + marked unsold for later)
+    # Total remaining = Available Now + Marked Unsold
     total_remaining_count = currently_unsold_count + marked_unsold_count
 
 
@@ -215,14 +215,13 @@ def auctions():
 
     if round_complete:
         next_round_status = f'Round {auction_round} Unsold'
-        next_round_players_count = Player.query.filter_by(status=next_round_status).count()
+        # Correctly count only non-retained players for the next round
+        next_round_players_count = Player.query.filter(Player.is_retained==False, Player.status==next_round_status).count()
         if next_round_players_count == 0:
-             # Check if there are still players with 'Unsold' status somehow missed
              still_unsold = Player.query.filter_by(is_retained=False, status='Unsold').count()
-             if still_unsold == 0: # Only complete if truly no more players
+             if still_unsold == 0:
                  auction_complete = True; auction_started = False
                  session['auction_complete'] = True; session['auction_started'] = False
-
 
     return render_template('auctions.html',
                            active_page='auctions', all_teams=all_teams,
@@ -231,14 +230,13 @@ def auctions():
                            next_round_players_count=next_round_players_count,
                            auction_round=auction_round, player=current_player,
                            current_user=current_user,
-                           # --- PASS COUNTS TO TEMPLATE ---
+                           # --- PASS COUNTS TO TEMPLATE (CORRECTED) ---
                            total_auction_players=total_auction_players,
                            sold_players_count=sold_players_count,
-                           remaining_players_count=total_remaining_count, # Total not yet sold
+                           remaining_players_count=total_remaining_count, # Use total remaining
                            currently_unsold_count=currently_unsold_count,  # Available now
                            marked_unsold_count=marked_unsold_count      # Marked unsold in rounds
-                           )
-                           
+                           )                           
                            
 @app.route('/next_player')
 @login_required
@@ -443,11 +441,31 @@ def delete_user(user_id):
 def export_team_excel(team_id):
     team = Team.query.get_or_404(team_id)
     team_players = team.players.order_by(Player.is_retained.desc(), Player.player_name).all()
+
     players_data = []
     for player in team_players:
         price_label = player.sold_price if player.sold_price is not None else 0
         status_label = "Retained" if player.is_retained else ("Sold" if player.status == 'Sold' else "Unsold/Other")
-        players_data.append({'Player Name': player.player_name, 'Status': status_label, 'Price (Points)': price_label, 'Overall Matches': player.overall_matches, 'Overall Runs': player.overall_runs, 'Overall Wickets': player.overall_wickets, 'Overall Bat Avg': player.overall_bat_avg, 'Overall Bowl Avg': player.overall_bowl_avg, 'CPL 2024 Team': player.cpl_2024_team, 'CPL 2024 Innings': player.cpl_2024_innings, 'CPL 2024 Runs': player.cpl_2024_runs, 'CPL 2024 Average': player.cpl_2024_average, 'CPL 2024 SR': player.cpl_2024_sr, 'CPL 2024 HS': player.cpl_2024_hs})
+        players_data.append({
+            'Player Name': player.player_name,
+            'Status': status_label,
+            'Price (Points)': price_label,
+            'Overall Matches': player.overall_matches,
+            'Overall Runs': player.overall_runs,
+            'Overall Wickets': player.overall_wickets,
+            # 'Overall Bat Avg': player.overall_bat_avg, # <-- REMOVED
+            # 'Overall Bowl Avg': player.overall_bowl_avg, # <-- REMOVED
+            'Overall SR': player.overall_sr, # <-- ADDED
+            'Overall HS': player.overall_hs, # <-- ADDED
+            'CPL 2024 Team': player.cpl_2024_team,
+            'CPL 2024 Innings': player.cpl_2024_innings,
+            'CPL 2024 Runs': player.cpl_2024_runs,
+            # 'CPL 2024 Average': player.cpl_2024_average, # Missing from CSV
+            'CPL 2024 Wickets': player.cpl_2024_wickets, # <-- ADDED
+            'CPL 2024 SR': player.cpl_2024_sr,
+            'CPL 2024 HS': player.cpl_2024_hs,
+        })
+
     if not players_data: flash(f"{team.team_name} has no players to export.", "info"); return redirect(url_for('teams'))
     df = pd.DataFrame(players_data); output = io.BytesIO()
     with pd.ExcelWriter(output, engine='openpyxl') as writer: df.to_excel(writer, index=False, sheet_name=team.team_name)
