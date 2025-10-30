@@ -33,7 +33,6 @@ class Team(db.Model):
     slots_remaining = Column(Integer, default=15) # Assuming max 15 slots
 
     captain = relationship('User', uselist=False, back_populates='team')
-    # Using lazy='dynamic' allows filtering/ordering players directly from the team object
     players = relationship('Player', back_populates='team', lazy='dynamic')
 
 class Player(db.Model):
@@ -46,22 +45,22 @@ class Player(db.Model):
     cpl_2024_team = Column(String(100), nullable=True)
     cpl_2024_innings = Column(Integer, nullable=True)
     cpl_2024_runs = Column(Integer, nullable=True)
-    cpl_2024_average = Column(Float, nullable=True)
+    cpl_2024_average = Column(Float, nullable=True) # This column is NOT in your CSV
     cpl_2024_sr = Column(Float, nullable=True)
     cpl_2024_hs = Column(Integer, nullable=True)
+    cpl_2024_wickets = Column(Integer, nullable=True) # <-- ADDED
 
     # Overall Records
     overall_matches = Column(Integer, nullable=True)
     overall_runs = Column(Integer, nullable=True)
     overall_wickets = Column(Integer, nullable=True)
-    overall_bat_avg = Column(Float, nullable=True)
-    overall_bowl_avg = Column(Float, nullable=True)
+    # overall_bat_avg = Column(Float, nullable=True) # <-- REMOVED
+    # overall_bowl_avg = Column(Float, nullable=True) # <-- REMOVED
+    overall_sr = Column(Float, nullable=True) # <-- Already present
+    overall_hs = Column(Integer, nullable=True) # <-- Already present
 
     # Auction Status: 'Unsold', 'Retained', 'Round X Unsold', 'Sold'
     status = Column(String(20), default='Unsold', nullable=False)
-    # Price: Last year's if retained initially, current auction price if sold
     sold_price = Column(Integer, default=0)
-
-    # Link to the team (if retained or sold)
     team_id = Column(Integer, ForeignKey('team.id'), nullable=True)
     team = relationship('Team', back_populates='players')
