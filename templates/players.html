@@ -22,16 +22,20 @@
              <div class="header-cell player-name-header">PLAYER</div>
              <div class="header-cell cpl-stats-header">CPL 2024 STATS</div>
              <div class="header-cell overall-stats-header">OVERALL RECORD</div>
+             
+             {# CPL Sub-headers (6 columns) #}
              <div class="header-cell sub-header cpl-innings">INNINGS</div>
              <div class="header-cell sub-header cpl-runs">RUNS</div>
-             <div class="header-cell sub-header cpl-avg">AVG</div>
+             <div class="header-cell sub-header cpl-wickets">WICKETS</div>
              <div class="header-cell sub-header cpl-sr">SR</div>
-             <div class="header-cell sub-header cpl-hs hs-header">HS</div>
+             <div class="header-cell sub-header cpl-hs hs-header">HS</div> {# Border class #}
+             
+             {# Overall Sub-headers (5 columns) #}
              <div class="header-cell sub-header ovr-matches">MATCHES</div>
              <div class="header-cell sub-header ovr-runs">RUNS</div>
              <div class="header-cell sub-header ovr-wickets">WICKETS</div>
-             <div class="header-cell sub-header ovr-batavg">BAT AVG</div>
-             <div class="header-cell sub-header ovr-bowlavg">BOWL AVG</div>
+             <div class="header-cell sub-header ovr-sr">SR</div>
+             <div class="header-cell sub-header ovr-hs">HS</div>
         </div>
         {% for player in players %}
         <div class="player-table-grid player-row
@@ -50,16 +54,19 @@
                     <span class="retained-badge">Retained by {{ player.team.team_name }}</span>
                 {% endif %}
             </div>
+            {# CPL Data (6 columns) #}
             <div class="data-cell">{{ player.cpl_2024_innings if player.cpl_2024_innings is not none else '-' }}</div>
             <div class="data-cell">{{ player.cpl_2024_runs if player.cpl_2024_runs is not none else '-' }}</div>
-            <div class="data-cell">{{ player.cpl_2024_average if player.cpl_2024_average is not none else '-' }}</div>
+            <div class="data-cell">{{ player.cpl_2024_wickets if player.cpl_2024_wickets is not none else '-' }}</div>
             <div class="data-cell">{{ player.cpl_2024_sr if player.cpl_2024_sr is not none else '-' }}</div>
-            <div class="data-cell hs-cell">{{ player.cpl_2024_hs if player.cpl_2024_hs is not none else '-' }}</div>
+            <div class="data-cell hs-cell">{{ player.cpl_2024_hs if player.cpl_2024_hs is not none else '-' }}</div> {# Border class #}
+            
+            {# Overall Data (5 columns) #}
             <div class="data-cell">{{ player.overall_matches if player.overall_matches is not none else '-' }}</div>
             <div class="data-cell">{{ player.overall_runs if player.overall_runs is not none else '-' }}</div>
             <div class="data-cell">{{ player.overall_wickets if player.overall_wickets is not none else '-' }}</div>
-            <div class="data-cell">{{ player.overall_bat_avg if player.overall_bat_avg is not none else '-' }}</div>
-            <div class="data-cell">{{ player.overall_bowl_avg if player.overall_bowl_avg is not none else '-' }}</div>
+            <div class="data-cell">{{ player.overall_sr if player.overall_sr is not none else '-' }}</div>
+            <div class="data-cell">{{ player.overall_hs if player.overall_hs is not none else '-' }}</div>
         </div>
         {% endfor %}
         </div> </div>
@@ -67,21 +74,18 @@
 
 {% block scripts %}
 <script>
-    const filterButtons = document.querySelectorAll('.filter-btn');
-    const playerRows = document.querySelectorAll('.player-row');
-
-    filterButtons.forEach(button => {
+    document.querySelectorAll('.filter-btn').forEach(button => {
         button.addEventListener('click', () => {
             // Update active button style
-            filterButtons.forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
             button.classList.add('active');
 
             const filterValue = button.getAttribute('data-filter'); // 'all', 'sold', 'unsold', 'retained', 'auction'
 
             // Show/hide rows based on filter
-            playerRows.forEach(row => {
+            document.querySelectorAll('.player-row').forEach(row => {
                 const rowStatus = row.getAttribute('data-status'); // 'sold', 'unsold', or 'retained'
-                const isRetained = rowStatus === 'retained';
+                const isRetained = (rowStatus === 'retained');
 
                 let showRow = false;
                 if (filterValue === 'all') {
@@ -97,5 +101,4 @@
         });
     });
 </script>
-
 {% endblock %}
